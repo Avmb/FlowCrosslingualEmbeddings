@@ -27,10 +27,10 @@ def logsumexp(x, dim=None):
         return xmax_ + torch.log(torch.exp(x - xmax).sum(dim))
 
 
-class MogFlow_batch(Flow):
+class GlowFlow_batch(Flow):
     def __init__(self, args, var):
         # freqs: np array of length ``size of word vocabulary''
-        super(MogFlow_batch, self).__init__()
+        super(GlowFlow_batch, self).__init__()
 
         self.args = args
 

@@ -77,3 +77,17 @@ def add_e2e_args(parser):
     parser.add_argument("--dico_max_rank", type=int, default=15000, help="Maximum dictionary words rank (0 to disable)")
     parser.add_argument("--dico_min_size", type=int, default=0, help="Minimum generated dictionary size (0 to disable)")
     parser.add_argument("--dico_max_size", type=int, default=0, help="Maximum generated dictionary size (0 to disable)")
+
+    # Non-linear flow
+    parser.add_argument("--flow_type", type=str, choices=["mog", "latent_glow"], default="mog", help="Model type")
+    parser.add_argument("--latent_glow_cond_blocks", type=int, default=1, help="Number of language-conditional blocks (blocks alternate between linear and split non-linear)")
+    parser.add_argument("--latent_glow_shared_blocks", type=int, default=4, help="Number of layers shared between languages (blocks alternate between linear and split non-linear)")
+    parser.add_argument("--latent_glow_split_block_type", type=str, , choices=["affine", "additive"], default="affine", help="Affine block (computed gain) or additive (gain fixed to 1)")
+    parser.add_argument("--latent_glow_split_block_internal_layers", type=int, default=3, help="Numbers of internal layers in each split non-linear block")
+    parser.add_argument("--latent_glow_split_block_internal_dim", type=int, default=300, help="Hidden layer dimension in split non-linear blocks")
+    parser.add_argument("--latent_glow_split_min_gain", type=float, default=0.1, help="Minimum gain for affine blocks")
+    parser.add_argument("--latent_glow_split_max_gain", type=float, default=15.0, help="Maximum gain for affine blocks")
+    parser.add_argument("--latent_glow_split_prior_sd", type=float, default=1.0, help="Standard deviation of the zero-mean Gaussian prior on the latent")
+
+
+    
