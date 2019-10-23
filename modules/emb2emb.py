@@ -1,7 +1,7 @@
 import torch.nn as nn
 from modules.model import Model
 from modules.flows.mog_flow import MogFlow_batch
-from modules.flows.glow_flow import GlowFlow_batch
+from modules.flows.glow_flow import GlowFlow_batch, GlowFlowAdaptor
 import torch
 from tools.utils import *
 from tools.dico_builder import build_dictionary
@@ -45,8 +45,10 @@ class E2E(Model):
           self.tgt_flow = MogFlow_batch(args, self.s2t_t_var)
         elif args.flow_type == "latent_glow":
           self.cond_flow = GlowFlow_batch(args)
-          self.src_flow = self.cond_flow.src_flow
-          self.tgt_flow = self.cond_flow.tgt_flow
+
+          self.src_flow = GlowFlowAdaptor(self.cond_flow, "src")
+          self.tgt_flow = GlowFlowAdaptor(self.cond_flow, "tgt")
+
         
         self.s2t_valid_dico = None
         self.t2s_valid_dico = None

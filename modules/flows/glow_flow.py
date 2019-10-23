@@ -75,7 +75,7 @@ class SplitBlockFlow(Flow):
             nn.init.kaiming_uniform_(cur_W)
             self.register_parameter("W_hid_%s" % i, cur_W)
             self.W_hids.append(cur_W)
-            cur_b = torch.zeros(self.hidden_dim)
+            cur_b = nn.Parameter(torch.zeros(self.hidden_dim))
             self.register_parameter("b_hid_%s" % i, cur_b)
             self.b_hids.append(cur_b)
             cur_in_dim = self.hidden_dim
@@ -98,12 +98,12 @@ class SplitBlockFlow(Flow):
     def backward(self, y: torch.tensor, require_log_probs=True, forward=False):
         h = y
         for i in range(self.n_layers):
-            h = h.mm(self.W_hids[i]) + self.b_bids[i]
+            h = h.mm(self.W_hids[i]) + self.b_hids[i]
             h = nn.functional.relu(h)
         loc = h.mm(self.W_loc) + self.b_loc
         if self.block_type == "affine":
             gain = h.mm(self.W_gain) + self.b_gain
-            gain = nn.functional.sigmoid(gain) * self.gain_range + self.min_gain
+            gain = torch.sigmoid(gain) * self.gain_range + self.min_gain
             if not forward:
                 x_prime = y * gain + loc
             else:
@@ -160,9 +160,6 @@ class GlowFlow_batch(Flow):
             self.shared_blocks.append(cur_flow)
             i += 1
 
-        self.src_flow = GlowFlowAdaptor(self, "src")
-        self.tgt_flow = GlowFlowAdaptor(self, "tgt")
-
 
     def cal_fix_var(self, x_prime):
         # x_prime: (batch_size, dim) -> transformed space
@@ -207,7 +204,7 @@ class GlowFlow_batch(Flow):
         return self.run_blocks(self.shared_blocks, y, require_log_probs, forward)
     def run_src_to_tgt_cond_blocks(self, y: torch.tensor, require_log_probs=True, forward=False):
         x_mid, log_probs = self.run_blocks(self.src_cond_blocks, y, require_log_probs, forward)
-        x, new_log_probs = self.run_blocks(self.src_cond_blocks, x_mid, require_log_probs, not forward)
+        x, new_log_probs = self.run_blocks(self.tgt_cond_blocks, x_mid, require_log_probs, not forward)
         return x, log_probs - new_log_probs
     def run_tgt_to_src_cond_blocks(self, y: torch.tensor, require_log_probs=True, forward=False):
         x_mid, log_probs = self.run_blocks(self.tgt_cond_blocks, y, require_log_probs, forward)
@@ -228,6 +225,7 @@ class GlowFlow_batch(Flow):
         else:
             x_mid, log_probs = self.run_blocks(self.shared_blocks, y, require_log_probs, True)
             x, new_log_probs = self.run_blocks(self.tgt_cond_blocks, x_mid, require_log_probs, True)
+        return x, log_probs + new_log_probs
 
 
     @overrides
