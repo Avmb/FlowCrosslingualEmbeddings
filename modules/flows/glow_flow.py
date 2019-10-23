@@ -200,34 +200,34 @@ class GlowFlow_batch(Flow):
         return x_prime, log_probs
     
     def run_src_cond_blocks(self, y: torch.tensor, require_log_probs=True, forward=False):
-        return self.run_blocks(self.src_cond_blocks y, require_log_probs, forward)
+        return self.run_blocks(self.src_cond_blocks, y, require_log_probs, forward)
     def run_tgt_cond_blocks(self, y: torch.tensor, require_log_probs=True, forward=False):
-        return self.run_blocks(self.tgt_cond_blocks y, require_log_probs, forward)
+        return self.run_blocks(self.tgt_cond_blocks, y, require_log_probs, forward)
     def run_shared_blocks(self, y: torch.tensor, require_log_probs=True, forward=False):
-        return self.run_blocks(self.shared_blocks y, require_log_probs, forward)
+        return self.run_blocks(self.shared_blocks, y, require_log_probs, forward)
     def run_src_to_tgt_cond_blocks(self, y: torch.tensor, require_log_probs=True, forward=False):
-        x_mid, log_probs = self.run_blocks(self.src_cond_blocks y, require_log_probs, forward)
-        x, new_log_probs = self.run_blocks(self.src_cond_blocks x_mid, require_log_probs, not forward)
+        x_mid, log_probs = self.run_blocks(self.src_cond_blocks, y, require_log_probs, forward)
+        x, new_log_probs = self.run_blocks(self.src_cond_blocks, x_mid, require_log_probs, not forward)
         return x, log_probs - new_log_probs
     def run_tgt_to_src_cond_blocks(self, y: torch.tensor, require_log_probs=True, forward=False):
-        x_mid, log_probs = self.run_blocks(self.tgt_cond_blocks y, require_log_probs, forward)
-        x, new_log_probs = self.run_blocks(self.src_cond_blocks x_mid, require_log_probs, not forward)
+        x_mid, log_probs = self.run_blocks(self.tgt_cond_blocks, y, require_log_probs, forward)
+        x, new_log_probs = self.run_blocks(self.src_cond_blocks, x_mid, require_log_probs, not forward)
         return x, log_probs - new_log_probs
     def run_src_to_lat(self, y: torch.tensor, require_log_probs=True, forward=False):
         if not forward:
-            x_mid, log_probs = self.run_blocks(self.src_cond_blocks y, require_log_probs, False)
-            x, new_log_probs = self.run_blocks(self.shared_blocks x_mid, require_log_probs, False)
+            x_mid, log_probs = self.run_blocks(self.src_cond_blocks, y, require_log_probs, False)
+            x, new_log_probs = self.run_blocks(self.shared_blocks, x_mid, require_log_probs, False)
         else:
-            x_mid, log_probs = self.run_blocks(self.shared_blocks y, require_log_probs, True)
-            x, new_log_probs = self.run_blocks(self.src_cond_blocks x_mid, require_log_probs, True)
+            x_mid, log_probs = self.run_blocks(self.shared_blocks, y, require_log_probs, True)
+            x, new_log_probs = self.run_blocks(self.src_cond_blocks, x_mid, require_log_probs, True)
         return x, log_probs + new_log_probs
     def run_tgt_to_lat(self, y: torch.tensor, require_log_probs=True, forward=False):
         if not forward:
-            x_mid, log_probs = self.run_blocks(self.tgt_cond_blocks y, require_log_probs, False)
-            x, new_log_probs = self.run_blocks(self.shared_blocks x_mid, require_log_probs, False)
+            x_mid, log_probs = self.run_blocks(self.tgt_cond_blocks, y, require_log_probs, False)
+            x, new_log_probs = self.run_blocks(self.shared_blocks, x_mid, require_log_probs, False)
         else:
-            x_mid, log_probs = self.run_blocks(self.shared_blocks y, require_log_probs, True)
-            x, new_log_probs = self.run_blocks(self.tgt_cond_blocks x_mid, require_log_probs, True)
+            x_mid, log_probs = self.run_blocks(self.shared_blocks, y, require_log_probs, True)
+            x, new_log_probs = self.run_blocks(self.tgt_cond_blocks, x_mid, require_log_probs, True)
 
 
     @overrides
@@ -263,9 +263,10 @@ class GlowFlowAdaptor(Flow):
 
     @overrides
     def backward(self, y: torch.tensor, x: torch.tensor=None, x_freqs: torch.tensor=None, require_log_probs=True, var=None, y_freqs=None, forward=False, to_lat=False):
-        return self.cond_flow.backward(y, x, x_freqs:, require_log_probs, var, y_freqs, forward, from_src=self.from_src, to_lat=to_lat)
+        return self.cond_flow.backward(y, x, x_freqs, require_log_probs, var, y_freqs, forward, from_src=self.from_src, to_lat=to_lat)
 
-    @property W(self):
-        first_cond_block = self.cond_flow.src_cond_blocks[0] if self.from_source, else self.cond_flow.tgt_cond_blocks[0]
+    def get_W(self):
+        first_cond_block = self.cond_flow.src_cond_blocks[0] if self.from_source else self.cond_flow.tgt_cond_blocks[0]
         return first_cond_block.W
+    W = property(get_W)
 

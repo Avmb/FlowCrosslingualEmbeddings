@@ -82,7 +82,7 @@ def add_e2e_args(parser):
     parser.add_argument("--flow_type", type=str, choices=["mog", "latent_glow"], default="mog", help="Model type")
     parser.add_argument("--latent_glow_cond_blocks", type=int, default=1, help="Number of language-conditional blocks (blocks alternate between linear and split non-linear)")
     parser.add_argument("--latent_glow_shared_blocks", type=int, default=4, help="Number of layers shared between languages (blocks alternate between linear and split non-linear)")
-    parser.add_argument("--latent_glow_split_block_type", type=str, , choices=["affine", "additive"], default="affine", help="Affine block (computed gain) or additive (gain fixed to 1)")
+    parser.add_argument("--latent_glow_split_block_type", type=str, choices=["affine", "additive"], default="affine", help="Affine block (computed gain) or additive (gain fixed to 1)")
     parser.add_argument("--latent_glow_split_block_internal_layers", type=int, default=3, help="Numbers of internal layers in each split non-linear block")
     parser.add_argument("--latent_glow_split_block_internal_dim", type=int, default=300, help="Hidden layer dimension in split non-linear blocks")
     parser.add_argument("--latent_glow_split_min_gain", type=float, default=0.1, help="Minimum gain for affine blocks")

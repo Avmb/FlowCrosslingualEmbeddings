@@ -3,7 +3,7 @@
 source activate dema
 
 src_lang="en"
-tgt_lang="de"
+tgt_lang="es"
 MODEL_NAME=id_${src_lang}_${tgt_lang}
 
 # path to save saved params/setting/logs
@@ -65,5 +65,6 @@ CUDA_VISIBLE_DEVICES=2 OMP_NUM_THREADS=4 python -u ../main_e2e.py \
     --n_steps 150000 \
     --display_steps 100 \
     --valid_steps 5000 \
+    --flow_type latent_glow \
     --sup_dict_path $data_path/crosslingual/dictionaries/${src_lang}-${tgt_lang}.0-5000.txt \
     --dico_eval $data_path/crosslingual/dictionaries/${src_lang}-${tgt_lang}.5000-6500.txt 2>&1 | tee ${exp_path}/train.log
