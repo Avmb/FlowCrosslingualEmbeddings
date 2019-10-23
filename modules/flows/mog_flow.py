@@ -122,7 +122,7 @@ class MogFlow_batch(Flow):
         return x.mm(self.W.t())
 
     @overrides
-    def backward(self, y: torch.tensor, x: torch.tensor=None, x_freqs: torch.tensor=None, require_log_probs=True, var=None, y_freqs=None):
+    def backward(self, y: torch.tensor, x: torch.tensor=None, x_freqs: torch.tensor=None, require_log_probs=True, var=None, y_freqs=None, to_lat=None):
         # from other language to this language
         x_prime = y.mm(self.W)
         if require_log_probs:

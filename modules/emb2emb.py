@@ -1,6 +1,7 @@
 import torch.nn as nn
 from modules.model import Model
 from modules.flows.mog_flow import MogFlow_batch
+from modules.flows.glow_flow import GlowFlow_batch
 import torch
 from tools.utils import *
 from tools.dico_builder import build_dictionary
@@ -37,10 +38,15 @@ class E2E(Model):
         self.register_buffer('src_freqs', torch.tensor(src_dict.freqs, dtype=torch.float))
         self.register_buffer('tgt_freqs', torch.tensor(tgt_dict.freqs, dtype=torch.float))
 
-        # backward: t2s
-        self.src_flow = MogFlow_batch(args, self.t2s_s_var)
-        # backward: s2t
-        self.tgt_flow = MogFlow_batch(args, self.s2t_t_var)
+        if args.flow_type == "mog":
+          # backward: t2s
+          self.src_flow = MogFlow_batch(args, self.t2s_s_var)
+          # backward: s2t
+          self.tgt_flow = MogFlow_batch(args, self.s2t_t_var)
+        elif args.flow_type == "latent_glow":
+          self.cond_flow = GlowFlow_batch(args)
+          self.src_flow = self.cond_flow.src_flow
+          self.tgt_flow = self.cond_flow.tgt_flow
         
         self.s2t_valid_dico = None
         self.t2s_valid_dico = None
@@ -143,9 +149,9 @@ class E2E(Model):
             base_tgt_freq = torch.log(tgt_freq_normalized)
 
         src_to_tgt, src_ll = self.tgt_flow.backward(src_emb, x=base_tgt_emb, x_freqs=base_tgt_freq,
-                                                    require_log_probs=True, var=base_tgt_var, y_freqs=train_src_freq)
+                                                    require_log_probs=True, var=base_tgt_var, y_freqs=train_src_freq, to_lat=True)
         tgt_to_src, tgt_ll = self.src_flow.backward(tgt_emb, x=base_src_emb, x_freqs=base_src_freq,
-                                                    require_log_probs=True, var=base_src_var, y_freqs=train_tgt_freq)
+                                                    require_log_probs=True, var=base_src_var, y_freqs=train_tgt_freq, to_lat=True)
         # the log density of observing src embeddings (transformm to target space)
         src_nll, tgt_nll = -src_ll.mean(), -tgt_ll.mean()
         loss = src_nll + tgt_nll

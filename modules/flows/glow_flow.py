@@ -231,19 +231,21 @@ class GlowFlow_batch(Flow):
 
 
     @overrides
-    def forward(self, x: torch.tensor, from_src=True):
-        y, _ = self.backward(x, require_log_probs=False, forward=True, from_src=True)
+    def forward(self, x: torch.tensor, from_src=True, to_lat=False):
+        y, _ = self.backward(x, require_log_probs=False, forward=True, from_src=from_src, to_lat=to_lat)
         return y
 
     @overrides
-    def backward(self, y: torch.tensor, x: torch.tensor=None, x_freqs: torch.tensor=None, require_log_probs=True, var=None, y_freqs=None, forward=False, from_src=True):
+    def backward(self, y: torch.tensor, x: torch.tensor=None, x_freqs: torch.tensor=None, require_log_probs=True, var=None, y_freqs=None, forward=False, from_src=True, to_lat=False):
         # from other language to this language
 
-        x_prime, log_abs_det = self.run_src_to_lat(y, require_log_probs, forward) if from_src else self.run_tgtto_lat(y, require_log_probs, forward)
+        if to_lat:
+            x_prime, log_abs_det = self.run_src_to_lat(y, require_log_probs, forward) if from_src else self.run_tgt_to_lat(y, require_log_probs, forward)
+        else:
+            x_prime, log_abs_det = self.run_src_to_tgt_cond_blocks(y, require_log_probs, forward) if from_src else self.run_tgt_to_src_cond_blocks(y, require_log_probs, forward)
 
         if require_log_probs:
-            x = torch.zeros(1, self.emd_dim)
-            log_probs = self.cal_fix_var(x_prime)
+            log_probs = self.cal_fix_var(x_prime) if to_lat else torch.tensor(0)
             log_probs = log_probs + log_abs_det
         else:
             log_probs = torch.tensor(0)
@@ -256,12 +258,12 @@ class GlowFlowAdaptor(Flow):
         self.from_src = (direction == "src")
     
     @overrides
-    def forward(self, x: torch.tensor):
-        return self.cond_flow.forward(x, from_src=self.from_src)
+    def forward(self, x: torch.tensor, to_lat=False):
+        return self.cond_flow.forward(x, from_src=self.from_src, to_lat=False)
 
     @overrides
-    def backward(self, y: torch.tensor, x: torch.tensor=None, x_freqs: torch.tensor=None, require_log_probs=True, var=None, y_freqs=None, forward=False):
-        return self.cond_flow.backward(y, x, x_freqs:, require_log_probs, var, y_freqs, forward, from_src=self.from_src)
+    def backward(self, y: torch.tensor, x: torch.tensor=None, x_freqs: torch.tensor=None, require_log_probs=True, var=None, y_freqs=None, forward=False, to_lat=False):
+        return self.cond_flow.backward(y, x, x_freqs:, require_log_probs, var, y_freqs, forward, from_src=self.from_src, to_lat=to_lat)
 
     @property W(self):
         first_cond_block = self.cond_flow.src_cond_blocks[0] if self.from_source, else self.cond_flow.tgt_cond_blocks[0]
